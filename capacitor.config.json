@@ -1,0 +1,9 @@
+{
+  "appId": "app.lovable.7b1592a79e0c4c16b3017e7c50b495fd",
+  "appName": "TimeTable",
+  "webDir": "dist",
+  "server": {
+    "url": "https://7b1592a7-9e0c-4c16-b301-7e7c50b495fd.lovableproject.com?forceHideBadge=true",
+    "cleartext": true
+  }
+}
