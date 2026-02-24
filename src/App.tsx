@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
 import BottomNav from "@/components/BottomNav";
 import Welcome from "@/pages/Welcome";
 import Auth from "@/pages/Auth";
@@ -26,23 +27,25 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Welcome />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/timetable" element={<Timetable />} />
-          <Route path="/timer" element={<Timer />} />
-          <Route path="/timer/:subjectId" element={<Timer />} />
-          <Route path="/notes" element={<Notes />} />
-          <Route path="/progress" element={<ProgressPage />} />
-          <Route path="/study-bot" element={<StudyBot />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/achievements" element={<Achievements />} />
-          <Route path="/session-complete" element={<SessionComplete />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <BottomNav />
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Welcome />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/timetable" element={<Timetable />} />
+            <Route path="/timer" element={<Timer />} />
+            <Route path="/timer/:subjectId" element={<Timer />} />
+            <Route path="/notes" element={<Notes />} />
+            <Route path="/progress" element={<ProgressPage />} />
+            <Route path="/study-bot" element={<StudyBot />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/achievements" element={<Achievements />} />
+            <Route path="/session-complete" element={<SessionComplete />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <BottomNav />
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
