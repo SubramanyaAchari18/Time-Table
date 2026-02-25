@@ -1,5 +1,9 @@
-import { User, Bell, Palette, Shield, Download, ChevronRight } from "lucide-react";
+import { User, Bell, Palette, Shield, Download, ChevronRight, LogOut } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { useProfile } from "@/hooks/useSupabaseData";
+import { useNavigate } from "react-router-dom";
 
 const menuItems = [
   { icon: User, label: "Personal Info", desc: "Name, education, goals" },
@@ -10,6 +14,15 @@ const menuItems = [
 ];
 
 const Profile = () => {
+  const { user, signOut } = useAuth();
+  const { data: profile } = useProfile();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
+
   return (
     <div className="flex flex-col gap-5 px-5 pb-24 pt-6 safe-top">
       <h1 className="text-2xl font-bold text-foreground">Profile</h1>
@@ -20,8 +33,8 @@ const Profile = () => {
           <User className="h-10 w-10 text-primary" />
         </div>
         <div className="text-center">
-          <p className="text-lg font-semibold text-foreground">Student</p>
-          <p className="text-sm text-muted-foreground">student@email.com</p>
+          <p className="text-lg font-semibold text-foreground">{profile?.display_name || "Student"}</p>
+          <p className="text-sm text-muted-foreground">{user?.email}</p>
         </div>
       </div>
 
@@ -42,6 +55,10 @@ const Profile = () => {
           </Card>
         ))}
       </div>
+
+      <Button variant="destructive" className="mt-4 rounded-xl gap-2" onClick={handleSignOut}>
+        <LogOut className="h-4 w-4" /> Sign Out
+      </Button>
     </div>
   );
 };
