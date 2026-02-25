@@ -14,6 +14,165 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          created_at: string
+          description: string
+          gems_reward: number
+          icon: string
+          id: string
+          name: string
+          rarity: string
+          requirement_type: string
+          requirement_value: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          gems_reward?: number
+          icon?: string
+          id?: string
+          name: string
+          rarity?: string
+          requirement_type: string
+          requirement_value?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          gems_reward?: number
+          icon?: string
+          id?: string
+          name?: string
+          rarity?: string
+          requirement_type?: string
+          requirement_value?: number
+        }
+        Relationships: []
+      }
+      daily_progress: {
+        Row: {
+          date: string
+          gems_earned: number
+          id: string
+          sessions_completed: number
+          total_study_seconds: number
+          user_id: string
+        }
+        Insert: {
+          date?: string
+          gems_earned?: number
+          id?: string
+          sessions_completed?: number
+          total_study_seconds?: number
+          user_id: string
+        }
+        Update: {
+          date?: string
+          gems_earned?: number
+          id?: string
+          sessions_completed?: number
+          total_study_seconds?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notes_files: {
+        Row: {
+          created_at: string
+          file_path: string
+          file_size_bytes: number | null
+          file_type: string | null
+          folder_id: string | null
+          id: string
+          name: string
+          subject_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_path: string
+          file_size_bytes?: number | null
+          file_type?: string | null
+          folder_id?: string | null
+          id?: string
+          name: string
+          subject_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_path?: string
+          file_size_bytes?: number | null
+          file_type?: string | null
+          folder_id?: string | null
+          id?: string
+          name?: string
+          subject_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_files_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "notes_folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_files_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notes_folders: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          parent_folder_id: string | null
+          subject_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          parent_folder_id?: string | null
+          subject_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          parent_folder_id?: string | null
+          subject_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_folders_parent_folder_id_fkey"
+            columns: ["parent_folder_id"]
+            isOneToOne: false
+            referencedRelation: "notes_folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_folders_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -52,6 +211,156 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      schedules: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          start_time: string
+          subject_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          start_time: string
+          subject_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          start_time?: string
+          subject_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedules_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_sessions: {
+        Row: {
+          completed: boolean
+          duration_seconds: number
+          ended_at: string | null
+          gems_earned: number
+          id: string
+          notes: string | null
+          rating: number | null
+          started_at: string
+          subject_id: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          duration_seconds: number
+          ended_at?: string | null
+          gems_earned?: number
+          id?: string
+          notes?: string | null
+          rating?: number | null
+          started_at?: string
+          subject_id: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          duration_seconds?: number
+          ended_at?: string | null
+          gems_earned?: number
+          id?: string
+          notes?: string | null
+          rating?: number | null
+          started_at?: string
+          subject_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_sessions_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subjects: {
+        Row: {
+          color: string
+          created_at: string
+          duration_minutes: number
+          id: string
+          name: string
+          priority: string
+          study_goals: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          name: string
+          priority?: string
+          study_goals?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          name?: string
+          priority?: string
+          study_goals?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          id: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          id?: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          id?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
