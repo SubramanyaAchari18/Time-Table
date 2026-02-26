@@ -1,11 +1,12 @@
-import { Flame, Gem, Plus, Clock } from "lucide-react";
+import { Flame, Gem, Plus, Clock, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useProfile, useSchedules, useStreak, useTodayProgress, useUserAchievements } from "@/hooks/useSupabaseData";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Trophy } from "lucide-react";
+import { useMissedSessions } from "@/hooks/useMissedSessions";
+import MissedSessionReminder from "@/components/MissedSessionReminder";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -14,7 +15,7 @@ const Dashboard = () => {
   const { data: streak } = useStreak();
   const { data: todayProgress } = useTodayProgress();
   const { data: userAchievements } = useUserAchievements();
-
+  const missedSessions = useMissedSessions();
   const dayOfWeek = new Date().getDay();
   // Convert JS day (0=Sun) to our schema (0=Mon)
   const schemaDay = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
@@ -60,6 +61,11 @@ const Dashboard = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Missed Session Reminders */}
+      {missedSessions.length > 0 && (
+        <MissedSessionReminder missedSessions={missedSessions} />
+      )}
 
       {/* Daily Progress */}
       <div>
