@@ -1,8 +1,23 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Play, Pause, Square } from "lucide-react";
+import { Play, Pause, Square, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSubjects } from "@/hooks/useSupabaseData";
+
+const MOTIVATIONAL_QUOTES = [
+  { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+  { text: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+  { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
+  { text: "Success is the sum of small efforts repeated day in and day out.", author: "Robert Collier" },
+  { text: "The expert in anything was once a beginner.", author: "Helen Hayes" },
+  { text: "Learning is not a spectator sport.", author: "D. Blocher" },
+  { text: "The beautiful thing about learning is that no one can take it away from you.", author: "B.B. King" },
+  { text: "Discipline is the bridge between goals and accomplishment.", author: "Jim Rohn" },
+  { text: "Small daily improvements are the key to staggering long-term results.", author: "Unknown" },
+  { text: "Push yourself, because no one else is going to do it for you.", author: "Unknown" },
+  { text: "Education is the passport to the future.", author: "Malcolm X" },
+  { text: "Study hard, for the well is deep, and our brains are shallow.", author: "Richard Baxter" },
+];
 
 const Timer = () => {
   const { subjectId } = useParams();
@@ -15,6 +30,8 @@ const Timer = () => {
   const [timeLeft, setTimeLeft] = useState(totalSeconds);
   const [isRunning, setIsRunning] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const [quoteIndex, setQuoteIndex] = useState(() => Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length));
+  const [quoteFading, setQuoteFading] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<Date | null>(null);
 
@@ -24,6 +41,19 @@ const Timer = () => {
     setHasStarted(false);
   }, [totalSeconds, subjectId]);
 
+  // Rotate quotes every 15 seconds while running
+  useEffect(() => {
+    if (!isRunning) return;
+    const quoteInterval = setInterval(() => {
+      setQuoteFading(true);
+      setTimeout(() => {
+        setQuoteIndex(prev => (prev + 1) % MOTIVATIONAL_QUOTES.length);
+        setQuoteFading(false);
+      }, 300);
+    }, 15000);
+    return () => clearInterval(quoteInterval);
+  }, [isRunning]);
+
   useEffect(() => {
     if (isRunning && timeLeft > 0) {
       intervalRef.current = setInterval(() => {
@@ -31,7 +61,6 @@ const Timer = () => {
           if (prev <= 1) {
             clearInterval(intervalRef.current!);
             setIsRunning(false);
-            // Navigate to session complete with data
             const elapsed = totalSeconds;
             const gems = Math.max(1, Math.round(elapsed / 60));
             navigate("/session-complete", {
@@ -62,7 +91,7 @@ const Timer = () => {
     setIsRunning(false);
     const elapsed = totalSeconds - timeLeft;
     if (elapsed > 30 && subjectId) {
-      const gems = Math.max(1, Math.round(elapsed / 120)); // Half gems for incomplete
+      const gems = Math.max(1, Math.round(elapsed / 120));
       navigate("/session-complete", {
         state: { subjectId, subjectName: subject?.name, durationSeconds: elapsed, gemsEarned: gems, incomplete: true },
       });
@@ -76,6 +105,7 @@ const Timer = () => {
   const seconds = timeLeft % 60;
   const progress = totalSeconds > 0 ? (totalSeconds - timeLeft) / totalSeconds : 0;
   const circumference = 2 * Math.PI * 120;
+  const currentQuote = MOTIVATIONAL_QUOTES[quoteIndex];
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-background px-6 pb-24 safe-top safe-bottom">
@@ -110,6 +140,19 @@ const Timer = () => {
           </p>
         </div>
       </div>
+
+      {/* Motivational quote */}
+      {hasStarted && (
+        <div
+          className={`mx-auto max-w-xs text-center transition-opacity duration-300 ${quoteFading ? "opacity-0" : "opacity-100"}`}
+        >
+          <Quote className="mx-auto mb-2 h-4 w-4 text-primary/40" />
+          <p className="text-sm italic text-muted-foreground leading-relaxed">
+            "{currentQuote.text}"
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground/60">— {currentQuote.author}</p>
+        </div>
+      )}
 
       {/* Controls */}
       <div className="flex items-center gap-4">
