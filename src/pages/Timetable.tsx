@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, Clock } from "lucide-react";
+import { Plus, Trash2, Clock, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -170,8 +170,8 @@ const Timetable = () => {
                     {entry.start_time?.slice(0, 5)} – {entry.end_time?.slice(0, 5)}
                   </p>
                 </div>
-                <Button size="sm" variant="outline" className="rounded-xl text-xs" onClick={() => navigate(`/timer/${entry.subject_id}`)}>
-                  Study
+                <Button size="sm" className="rounded-xl text-xs gap-1.5" onClick={() => navigate(`/timer/${entry.subject_id}`)}>
+                  <Play className="h-3 w-3" /> Start Study
                 </Button>
                 <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" onClick={() => deleteSchedule.mutate(entry.id)}>
                   <Trash2 className="h-4 w-4" />
@@ -206,6 +206,9 @@ const Timetable = () => {
                     <p className="text-sm font-medium text-foreground">{sub.name}</p>
                     <p className="text-xs text-muted-foreground">{sub.duration_minutes} min • {sub.priority}</p>
                   </div>
+                   <Button size="sm" className="rounded-xl text-xs gap-1.5" onClick={() => navigate(`/timer/${sub.id}`)}>
+                    <Play className="h-3 w-3" /> Start Study
+                  </Button>
                   <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" onClick={() => deleteSubject.mutate(sub.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
