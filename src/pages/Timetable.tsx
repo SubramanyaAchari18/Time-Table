@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useSubjects, useCreateSubject, useDeleteSubject, useSchedules, useCreateSchedule, useDeleteSchedule } from "@/hooks/useSupabaseData";
+import { useSubjects, useCreateSubject, useDeleteSubject, useSchedules, useCreateSchedule, useDeleteSchedule } from "@/hooks/useFirestoreData";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 

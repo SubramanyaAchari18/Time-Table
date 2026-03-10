@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { useSchedules, useStudySessions } from "./useSupabaseData";
+import { useSchedules, useStudySessions } from "./useFirestoreData";
+import { toLocalDateKey } from "@/lib/utils";
 
 export interface MissedSession {
   scheduleId: string;
@@ -21,7 +22,7 @@ export const useMissedSessions = () => {
 
     const now = new Date();
     const currentTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-    const todayStr = now.toISOString().split("T")[0];
+    const todayStr = toLocalDateKey(now);
 
     // Get subject IDs that have a session today
     const completedSubjectIds = new Set(

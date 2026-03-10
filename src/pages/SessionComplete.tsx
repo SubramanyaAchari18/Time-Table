@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Gem, Star } from "lucide-react";
-import { useCreateStudySession } from "@/hooks/useSupabaseData";
+import { useCreateStudySession } from "@/hooks/useFirestoreData";
 import { useToast } from "@/hooks/use-toast";
 
 const SessionComplete = () => {

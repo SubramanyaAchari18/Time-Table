@@ -1,6 +1,6 @@
 import { Trophy, Lock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { useAchievements, useUserAchievements } from "@/hooks/useSupabaseData";
+import { useAchievements, useUserAchievements } from "@/hooks/useFirestoreData";
 
 const RARITY_COLORS: Record<string, string> = {
   common: "border-muted-foreground/30",

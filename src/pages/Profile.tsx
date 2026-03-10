@@ -1,9 +1,12 @@
+import { useState, useEffect } from "react";
 import { User, Bell, Palette, Shield, Download, ChevronRight, LogOut } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
-import { useProfile } from "@/hooks/useSupabaseData";
+import { useProfile, useUpdateProfile } from "@/hooks/useFirestoreData";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const menuItems = [
   { icon: User, label: "Personal Info", desc: "Name, education, goals" },
@@ -16,25 +19,59 @@ const menuItems = [
 const Profile = () => {
   const { user, signOut } = useAuth();
   const { data: profile } = useProfile();
+  const updateProfile = useUpdateProfile();
+  const { toast } = useToast();
+  const [displayName, setDisplayName] = useState("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setDisplayName(profile?.display_name || user?.email?.split("@")[0] || "");
+  }, [profile, user]);
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
   };
 
+  const handleSaveProfile = async () => {
+    const name = displayName.trim();
+    if (!name) return;
+    try {
+      await updateProfile.mutateAsync({ display_name: name });
+      toast({ title: "Profile updated" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
   return (
     <div className="flex flex-col gap-5 px-5 pb-24 pt-6 safe-top">
       <h1 className="text-2xl font-bold text-foreground">Profile</h1>
 
-      {/* Avatar section */}
+      {/* Avatar + basic info */}
       <div className="flex flex-col items-center gap-3 py-4">
         <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
           <User className="h-10 w-10 text-primary" />
         </div>
-        <div className="text-center">
-          <p className="text-lg font-semibold text-foreground">{profile?.display_name || "Student"}</p>
-          <p className="text-sm text-muted-foreground">{user?.email}</p>
+        <div className="text-center space-y-2 w-full max-w-xs">
+          <div>
+            <p className="text-xs text-muted-foreground">Display name</p>
+            <Input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Your name"
+              className="mt-1 h-9 rounded-xl text-center"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">{user?.email}</p>
+          <Button
+            size="sm"
+            className="mt-1 rounded-xl px-4"
+            disabled={updateProfile.isPending || !displayName.trim()}
+            onClick={handleSaveProfile}
+          >
+            {updateProfile.isPending ? "Saving..." : "Save profile"}
+          </Button>
         </div>
       </div>
 

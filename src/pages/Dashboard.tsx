@@ -1,12 +1,14 @@
-import { Flame, Gem, Plus, Clock, Trophy } from "lucide-react";
+import { Flame, Gem, Plus, Clock, Trophy, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { useProfile, useSchedules, useStreak, useTodayProgress, useUserAchievements } from "@/hooks/useSupabaseData";
+import { useProfile, useSchedules, useStreak, useTodayProgress, useUserAchievements } from "@/hooks/useFirestoreData";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useMissedSessions } from "@/hooks/useMissedSessions";
 import MissedSessionReminder from "@/components/MissedSessionReminder";
+import { useUpcomingCalendarEvents } from "@/hooks/useCalendar";
+import { sendEventEmailReminder } from "@/notifications/NotificationSystem";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -20,6 +22,7 @@ const Dashboard = () => {
   // Convert JS day (0=Sun) to our schema (0=Mon)
   const schemaDay = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
   const { data: todaySchedules } = useSchedules(schemaDay);
+  const { events: upcomingEvents } = useUpcomingCalendarEvents(7);
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -61,6 +64,71 @@ const Dashboard = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Upcoming Calendar Events (next 7 days) */}
+      {upcomingEvents && upcomingEvents.length > 0 && (
+        <Card>
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Bell className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-semibold text-foreground">Upcoming events (next 7 days)</h2>
+              </div>
+            </div>
+            <div className="space-y-2">
+              {upcomingEvents.map((ev) => {
+                const daysLeft = Math.max(
+                  0,
+                  Math.round(
+                    (new Date(ev.eventDate + "T00:00:00").getTime() - new Date().setHours(0, 0, 0, 0)) /
+                      (24 * 60 * 60 * 1000)
+                  )
+                );
+                const isExamSoon = ev.eventType === "exam" && daysLeft <= 3;
+                return (
+                  <div
+                    key={ev.id}
+                    className={`flex items-center justify-between rounded-xl border px-3 py-2 text-xs ${
+                      isExamSoon ? "border-destructive/60 bg-destructive/5" : "border-border bg-background"
+                    }`}
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium text-foreground">{ev.title}</span>
+                      <span className="text-[11px] text-muted-foreground">
+                        {new Date(ev.eventDate + "T00:00:00").toLocaleDateString()} •{" "}
+                        {ev.eventType === "exam"
+                          ? daysLeft === 0
+                            ? "Exam is today"
+                            : `Exam in ${daysLeft} day${daysLeft === 1 ? "" : "s"}`
+                          : daysLeft === 0
+                            ? "Today"
+                            : `In ${daysLeft} day${daysLeft === 1 ? "" : "s"}`}
+                      </span>
+                    </div>
+                    {user && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-xl text-[11px]"
+                        onClick={async () => {
+                          try {
+                            await sendEventEmailReminder(ev, user);
+                          } catch (err: any) {
+                            // Swallow errors; this is best-effort
+                            console.error(err);
+                          }
+                        }}
+                      >
+                        Notify
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Missed Session Reminders */}
       {missedSessions.length > 0 && (

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Play, Pause, Square, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useSubjects } from "@/hooks/useSupabaseData";
+import { useSubjects } from "@/hooks/useFirestoreData";
 
 const MOTIVATIONAL_QUOTES = [
   { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
