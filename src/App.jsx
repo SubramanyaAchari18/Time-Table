@@ -19,7 +19,6 @@ import Profile from "@/pages/Profile";
 import Achievements from "@/pages/Achievements";
 import SessionComplete from "@/pages/SessionComplete";
 import NotFound from "@/pages/NotFound";
-
 const queryClient = new QueryClient();
 
 const App = () => (

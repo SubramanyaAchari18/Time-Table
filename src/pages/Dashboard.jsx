@@ -11,6 +11,8 @@ import {
 } from "@/hooks/useFirestoreData";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useUserProfile } from "@/hooks/useUserProfile";
+import Avatar from "@/components/Avatar";
 import { useMissedSessions } from "@/hooks/useMissedSessions";
 import MissedSessionReminder from "@/components/MissedSessionReminder";
 import { useUpcomingCalendarEvents } from "@/hooks/useCalendar";
@@ -20,6 +22,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { data: profile } = useProfile();
+  const { data: userProfile } = useUserProfile();
   const { data: streak } = useStreak();
   const { data: todayProgress } = useTodayProgress();
   const { data: userAchievements } = useUserAchievements();
@@ -48,8 +51,11 @@ const Dashboard = () => {
     <div className="flex flex-col gap-5 px-5 pb-24 pt-6 safe-top">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
+        <div className="flex flex-col items-start gap-2">
           <p className="text-sm text-muted-foreground">{greeting()} 👋</p>
+          <div onClick={() => navigate("/profile")} className="cursor-pointer">
+            <Avatar src={userProfile?.avatarUrl} email={user?.email} size="md" />
+          </div>
           <h1 className="text-2xl font-bold text-foreground">{displayName}</h1>
         </div>
         <div className="flex items-center gap-3">
