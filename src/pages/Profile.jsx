@@ -154,7 +154,7 @@ const Profile = () => {
                 onClick={handleAvatarClick}
               >
                 <Avatar 
-                  src={profile?.avatarUrl} 
+                  src={profile?.avatar} 
                   email={user?.email} 
                   size="xl" 
                   className={uploadAvatar.isPending ? "opacity-50" : ""}

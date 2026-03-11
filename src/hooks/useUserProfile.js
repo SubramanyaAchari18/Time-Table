@@ -1,8 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
-import { firestoreDb, firebaseStorage } from "@/firebase/firebaseConfig";
+import { firestoreDb } from "@/firebase/firebaseConfig";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // Helper to fetch user profile directly
 const fetchUserProfile = async (userId) => {
@@ -22,7 +21,7 @@ export const useUserProfile = () => {
         // Fallbacks
         name: data?.name || user?.displayName || user?.email?.split("@")[0] || "Student",
         email: data?.email || user?.email || "",
-        avatarUrl: data?.avatarUrl || null,
+        avatar: data?.avatar || data?.avatarUrl || null,
         college: data?.college || "",
         year: data?.year || "",
         department: data?.department || "",
@@ -65,19 +64,31 @@ export const useUploadAvatar = () => {
     mutationFn: async (file) => {
       if (!file) throw new Error("No file selected");
       
-      const storageRef = ref(firebaseStorage, `avatars/${user.uid}/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file, { contentType: file.type });
-      const downloadUrl = await getDownloadURL(storageRef);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "avatar_upload");
+
+      const response = await fetch("https://api.cloudinary.com/v1_1/de1zu9szb/auto/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to upload image to Cloudinary");
+      }
+
+      const data = await response.json();
+      const downloadUrl = data.secure_url;
       
       // Update firestore with new avatar URL
-      await updateProfile.mutateAsync({ avatarUrl: downloadUrl });
+      await updateProfile.mutateAsync({ avatar: downloadUrl });
       
       return downloadUrl;
     },
     onSuccess: (url) => {
       qc.setQueryData(["userProfile", user?.uid], (old) => ({
         ...(old || {}),
-        avatarUrl: url,
+        avatar: url,
       }));
     },
   });

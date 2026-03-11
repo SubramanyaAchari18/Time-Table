@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
@@ -28,7 +29,6 @@ import {
   useNotesUsage,
 } from "@/hooks/useNotes";
 import { useToast } from "@/hooks/use-toast";
-import { resolveDownloadUrl } from "@/firebase/notesService";
 
 const Notes = () => {
   const [search, setSearch] = useState("");
@@ -50,7 +50,7 @@ const Notes = () => {
     isLoading: filesLoading,
     error: filesError,
   } = useNotesFiles(selectedFolder);
-  const usage = useNotesUsage(files);
+  const usage = useNotesUsage();
   const createFolder = useCreateFolder();
   const deleteFolder = useDeleteFolder();
   const uploadFile = useUploadFile();
@@ -103,8 +103,7 @@ const Notes = () => {
       });
       toast({ title: "File uploaded!" });
       if (newWindow) {
-        newWindow.location.href =
-          uploadedFile.fileURL || uploadedFile.storagePath;
+        newWindow.location.href = uploadedFile.fileURL;
       } else {
         handleOpenFile(uploadedFile); // fallback if popup blocked initially
       }
@@ -132,11 +131,9 @@ const Notes = () => {
     [files, search],
   );
 
-  const handleOpenFile = async (file) => {
+  const handleOpenFile = (file) => {
     try {
-      let url = file.fileURL || null;
-      if (!url && file.storagePath)
-        url = await resolveDownloadUrl({ storagePath: file.storagePath });
+      const url = file.fileURL;
 
       if (!url) {
         toast({
@@ -146,7 +143,7 @@ const Notes = () => {
         return;
       }
 
-      window.open(url, "_blank", "noopener,noreferrer");
+      window.open(url, "_blank");
     } catch (err) {
       toast({
         title: "Unable to open file",
@@ -163,18 +160,34 @@ const Notes = () => {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const usageText = usage?.bytesUsed
-    ? `${formatSize(usage.bytesUsed)} used`
+  const usageText = usage?.bytesUsed !== undefined
+    ? `${formatSize(usage.bytesUsed)} / 200 MB`
     : null;
+
+  const maxBytes = 200 * 1024 * 1024;
+  const usagePercent = usage?.bytesUsed ? Math.min(100, (usage.bytesUsed / maxBytes) * 100) : 0;
 
   return (
     <div className="flex flex-col gap-5 px-5 pb-24 pt-6 safe-top">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col">
+      {/* Storage Indicator */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">Notes</h1>
           {usageText && (
-            <p className="text-xs text-muted-foreground mt-0.5">{usageText}</p>
+            <div className="text-right">
+              <p className="text-xs font-medium text-foreground">Storage Used</p>
+              <p className="text-xs text-muted-foreground">{usageText}</p>
+            </div>
           )}
+        </div>
+        {usageText && (
+          <Progress value={usagePercent} className="h-2" />
+        )}
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col">
+          {/* Moved Notes title and usage up */}
         </div>
         <div className="flex gap-2">
           <Dialog open={showFolderDialog} onOpenChange={setShowFolderDialog}>

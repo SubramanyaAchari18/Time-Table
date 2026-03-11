@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import * as notes from "@/firebase/notesService";
+import { useUserProfile } from "./useUserProfile";
 
 export const useNotesFolders = () => {
   const { user } = useAuth();
@@ -116,9 +117,9 @@ export const useDeleteFile = () => {
   });
 };
 
-export const useNotesUsage = (files) => {
+export const useNotesUsage = () => {
+  const { data: profile } = useUserProfile();
   return useMemo(() => {
-    const bytesUsed = files.reduce((sum, f) => sum + Number(f.size ?? 0), 0);
-    return { bytesUsed };
-  }, [files]);
+    return { bytesUsed: profile?.storageUsed || 0 };
+  }, [profile?.storageUsed]);
 };

@@ -30,7 +30,7 @@ const ProfileDropdown = () => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar src={profile?.avatarUrl} email={user?.email} size="md" />
+          <Avatar src={profile?.avatar} email={user?.email} size="md" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>

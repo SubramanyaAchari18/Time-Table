@@ -9,13 +9,9 @@ import {
   query,
   serverTimestamp,
   where,
+  runTransaction
 } from "firebase/firestore";
-import {
-  deleteObject,
-  getDownloadURL,
-  ref,
-  uploadBytesResumable,
-} from "firebase/storage";
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { firestoreDb, firebaseStorage } from "./firebaseConfig";
 
 function safeFileName(name) {
@@ -80,77 +76,119 @@ export function subscribeToFiles(params) {
 }
 
 export async function uploadFile(params) {
-  const folderSegment = params.folderId ?? "root";
-  const storagePath = `notes/${folderSegment}/${Date.now()}_${safeFileName(params.file.name)}`;
-  const storageRef = ref(firebaseStorage, storagePath);
+  // First check if current storage used + new file size exceeds 200MB limit
+  const userRef = doc(firestoreDb, "users", params.userId);
+  const userSnap = await getDoc(userRef);
+  const currentUsage = userSnap.exists() ? (userSnap.data().storageUsed || 0) : 0;
+  const maxStorage = 200 * 1024 * 1024; // 200MB
 
-  const uploadTask = uploadBytesResumable(storageRef, params.file, {
-    contentType: params.file.type || undefined,
-  });
-
-  if (params.signal) {
-    const handleAbort = () => {
-      uploadTask.cancel();
-    };
-    params.signal.addEventListener("abort", handleAbort);
+  if (currentUsage + params.file.size > maxStorage) {
+    throw new Error("Storage limit reached (200MB). Please delete some files to upload new ones.");
   }
+
+  const storageRef = ref(
+    firebaseStorage,
+    `notes/${params.userId}/${Date.now()}_${safeFileName(params.file.name)}`
+  );
+
+  const uploadTask = uploadBytesResumable(storageRef, params.file);
 
   const result = await new Promise((resolve, reject) => {
     uploadTask.on(
       "state_changed",
       (snapshot) => {
-        const percent = Math.round(
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100,
-        );
-        if (!Number.isNaN(percent)) {
-          params.onProgress?.(percent);
+        const percent = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        if (params.onProgress) {
+          params.onProgress(Math.round(percent));
         }
       },
-      (error) => {
-        reject(error);
-      },
+      reject,
       async () => {
-        try {
-          const fileURL = await getDownloadURL(uploadTask.snapshot.ref);
-          resolve({ fileURL, snapshot: uploadTask.snapshot });
-        } catch (e) {
-          reject(e);
-        }
-      },
+        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+        resolve({
+          fileURL: downloadURL,
+          storagePath: storageRef.fullPath
+        });
+      }
     );
+
+    if (params.signal) {
+      params.signal.addEventListener("abort", () => {
+        uploadTask.cancel();
+        reject(new Error("upload_aborted"));
+      });
+    }
   });
 
-  const docRef = await addDoc(collection(firestoreDb, "files"), {
-    userId: params.userId,
-    folderId: params.folderId ?? null,
-    name: params.file.name,
-    fileURL: result.fileURL,
-    storagePath,
-    size: params.file.size,
-    type: params.file.type || "",
-    createdAt: serverTimestamp(),
-    createdAtClient: Date.now(),
+  let docRefId;
+  
+  // Use a transaction to safely update both the file doc and the user's storage limits
+  await runTransaction(firestoreDb, async (transaction) => {
+    const newFileRef = doc(collection(firestoreDb, "files"));
+    
+    // Read the user doc to get latest usage again just to be safe
+    const userDocRef = doc(firestoreDb, "users", params.userId);
+    const userDocSnap = await transaction.get(userDocRef);
+    const safeUsage = userDocSnap.exists() ? (userDocSnap.data().storageUsed || 0) : 0;
+    
+    if (safeUsage + params.file.size > maxStorage) {
+      throw new Error("Storage limit reached concurrently.");
+    }
+    
+    transaction.set(newFileRef, {
+      userId: params.userId,
+      folderId: params.folderId ?? null,
+      name: params.file.name,
+      fileURL: result.fileURL,
+      storagePath: result.storagePath,
+      size: params.file.size,
+      type: params.file.type || "",
+      createdAt: serverTimestamp(),
+      createdAtClient: Date.now(),
+    });
+    
+    transaction.set(userDocRef, {
+      storageUsed: safeUsage + params.file.size
+    }, { merge: true });
+    
+    docRefId = newFileRef.id;
   });
 
-  return { id: docRef.id, storagePath, fileURL: result.fileURL };
+  return { id: docRefId, fileURL: result.fileURL };
 }
 
 export async function deleteFile(params) {
   const fileRef = doc(firestoreDb, "files", params.fileId);
-  const snap = await getDoc(fileRef);
-  if (!snap.exists()) return;
-  const data = snap.data();
+  let storagePathToDelete = null;
+  
+  await runTransaction(firestoreDb, async (transaction) => {
+    const fileSnap = await transaction.get(fileRef);
+    if (!fileSnap.exists()) return;
+    
+    const fileData = fileSnap.data();
+    const fileSize = fileData.size || 0;
+    storagePathToDelete = fileData.storagePath;
+    
+    const userRef = doc(firestoreDb, "users", fileData.userId);
+    const userSnap = await transaction.get(userRef);
+    
+    if (userSnap.exists()) {
+      const currentUsage = userSnap.data().storageUsed || 0;
+      const newUsage = Math.max(0, currentUsage - fileSize);
+      transaction.set(userRef, { storageUsed: newUsage }, { merge: true });
+    }
+    
+    transaction.delete(fileRef);
+  });
 
-  const storagePath =
-    typeof data.storagePath === "string" ? data.storagePath : undefined;
-  if (storagePath) {
+  if (storagePathToDelete) {
     try {
-      await deleteObject(ref(firebaseStorage, storagePath));
-    } catch {
-      // ignore (already deleted / permission issues)
+      const storageRef = ref(firebaseStorage, storagePathToDelete);
+      await deleteObject(storageRef);
+    } catch (err) {
+      console.warn("Failed to delete from Firebase Storage:", err);
     }
   }
-  await deleteDoc(fileRef);
 }
 
 export async function deleteFolder(params) {
@@ -168,5 +206,5 @@ export async function deleteFolder(params) {
 }
 
 export async function resolveDownloadUrl(params) {
-  return await getDownloadURL(ref(firebaseStorage, params.storagePath));
+  return params.fileURL || params.storagePath || null;
 }
